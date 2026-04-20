@@ -8,9 +8,9 @@ plugins {
     java
     id("maven-publish")
     id("com.teamresourceful.resourcefulgradle") version "0.0.+"
-    id("dev.architectury.loom") version "1.6-SNAPSHOT" apply false
-    id("architectury-plugin") version "3.4-SNAPSHOT"
-    id("com.github.johnrengelman.shadow") version "7.1.2" apply false
+    id("dev.architectury.loom") version "1.14.473" apply false
+    id("architectury-plugin") version "3.5.166"
+    id("com.gradleup.shadow") version "9.4.1" apply false
 }
 
 architectury {
@@ -52,10 +52,14 @@ subprojects {
 
             officialMojangMappings()
 
-            parchment(create(group = "org.parchmentmc.data", name = "parchment-1.21", version = parchmentVersion))
+            parchment(create(group = "org.parchmentmc.data", name = "parchment-1.21.11", version = parchmentVersion))
         })
 
-        "modApi"(group = "com.teamresourceful.resourcefullib", name = "resourcefullib-$modLoader-1.21", version = resourcefulLibVersion)
+        "modApi"(
+            group = "com.teamresourceful.resourcefullib",
+            name = "resourcefullib-$modLoader-1.21.11",
+            version = resourcefulLibVersion
+        )
     }
 
     java {
