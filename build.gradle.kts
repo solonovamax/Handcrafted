@@ -29,7 +29,7 @@ subprojects {
     val isCommon = modLoader == rootProject.projects.common.name
 
     base {
-        archivesName.set("$modId-$modLoader-$minecraftVersion")
+        archivesName = "$modId-$modLoader-$minecraftVersion"
     }
 
     configure<LoomGradleExtensionAPI> {
@@ -41,48 +41,54 @@ subprojects {
         maven(url = "https://maven.neoforged.net/releases/")
     }
 
+    val minecraft by configurations.getting
+    val mappings by configurations.getting
+    val modApi by configurations.getting
+
     dependencies {
         val resourcefulLibVersion: String by project
 
-        "minecraft"("::$minecraftVersion")
+        minecraft("::$minecraftVersion")
 
         @Suppress("UnstableApiUsage")
-        "mappings"(project.the<LoomGradleExtensionAPI>().layered {
+        mappings(project.the<LoomGradleExtensionAPI>().layered {
             val parchmentVersion: String by project
 
             officialMojangMappings()
 
-            parchment(create(group = "org.parchmentmc.data", name = "parchment-1.21.11", version = parchmentVersion))
+            parchment("org.parchmentmc.data:parchment-1.21.11:${parchmentVersion}")
         })
 
-        "modApi"(
-            group = "com.teamresourceful.resourcefullib",
-            name = "resourcefullib-$modLoader-1.21.11",
-            version = resourcefulLibVersion
-        )
+        modApi("com.teamresourceful.resourcefullib:resourcefullib-$modLoader-1.21.11:$resourcefulLibVersion")
     }
 
     java {
         withSourcesJar()
     }
 
-    tasks.jar {
-        archiveClassifier.set("dev")
-    }
+    tasks {
+        jar {
+            archiveClassifier = "dev"
+        }
 
-    tasks.named<RemapJarTask>("remapJar") {
-        archiveClassifier.set(null as String?)
-    }
+        named<RemapJarTask>("remapJar") {
+            archiveClassifier = null
+        }
 
-    tasks.processResources {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        filesMatching(listOf("META-INF/neoforge.mods.toml", "fabric.mod.json")) {
-            expand("version" to project.version)
+        processResources {
+            val version = project.version
+            inputs.property("version", project.version)
+
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+            filesMatching(listOf("META-INF/neoforge.mods.toml", "fabric.mod.json")) {
+                expand("version" to version)
+            }
         }
     }
 
     if (!isCommon) {
-        apply(plugin = "com.github.johnrengelman.shadow")
+        apply(plugin = "com.gradleup.shadow")
         configure<ArchitectPluginExtension> {
             platformSetupLoomIde()
         }
@@ -93,21 +99,25 @@ subprojects {
         }
 
         tasks {
-            "shadowJar"(ShadowJar::class) {
-                archiveClassifier.set("dev-shadow")
+            val shadowJar by getting(ShadowJar::class) {
+                archiveClassifier = "dev-shadow"
                 configurations = listOf(shadowCommon)
 
                 exclude(".cache/**") // Remove datagen cache from jar.
                 exclude("**/handcrafted/datagen/**") // Remove data gen code from jar.
             }
 
-            "remapJar"(RemapJarTask::class) {
+            val remapJar by getting(RemapJarTask::class) {
                 dependsOn("shadowJar")
-                inputFile.set(named<ShadowJar>("shadowJar").flatMap { it.archiveFile })
+                inputFile = shadowJar.archiveFile
             }
         }
     } else {
-        sourceSets.main.get().resources.srcDir("src/main/generated/resources")
+        sourceSets {
+            main {
+                resources.srcDir("src/main/generated/resources")
+            }
+        }
     }
 
     idea {
@@ -123,18 +133,18 @@ subprojects {
                 from(components["java"])
 
                 pom {
-                    name.set("Handcrafted $modLoader")
-                    url.set("https://github.com/terrarium-earth/$modId")
+                    name = "Handcrafted $modLoader"
+                    url = "https://github.com/terrarium-earth/$modId"
 
                     scm {
-                        connection.set("git:https://github.com/terrarium-earth/$modId.git")
-                        developerConnection.set("git:https://github.com/terrarium-earth/$modId.git")
-                        url.set("https://github.com/terrarium-earth/$modId")
+                        connection = "git:https://github.com/terrarium-earth/$modId.git"
+                        developerConnection = "git:https://github.com/terrarium-earth/$modId.git"
+                        url = "https://github.com/terrarium-earth/$modId"
                     }
 
                     licenses {
                         license {
-                            name.set("ARR")
+                            name = "ARR"
                         }
                     }
                 }
@@ -161,14 +171,19 @@ resourcefulGradle {
             val fabricLink: String? = System.getenv("FABRIC_RELEASE_URL")
             val forgeLink: String? = System.getenv("FORGE_RELEASE_URL")
 
-            source.set(file("templates/embed.json.template"))
-            injectedValues.set(mapOf(
+            source = file("templates/embed.json.template")
+
+            // thanks gradle
+            @Suppress("UNCHECKED_CAST")
+            injectedValues.putAll(
+                mapOf(
                     "minecraft" to minecraftVersion,
                     "version" to version,
                     "changelog" to StringEscapeUtils.escapeJava(changelog),
                     "fabric_link" to fabricLink,
                     "forge_link" to forgeLink,
-            ))
+                ) as Map<String, Any>
+            )
         }
     }
 }

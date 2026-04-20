@@ -4,5 +4,5 @@ architectury {
 }
 
 dependencies {
-    modCompileOnly(group = "tech.thatgravyboat", name = "commonats", version = "2.0")
+    modCompileOnly("tech.thatgravyboat:commonats:2.0")
 }

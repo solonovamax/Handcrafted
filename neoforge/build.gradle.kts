@@ -16,7 +16,7 @@ loom {
 val common: Configuration by configurations.creating {
     configurations.compileClasspath.get().extendsFrom(this)
     configurations.runtimeClasspath.get().extendsFrom(this)
-    configurations["developmentNeoForge"].extendsFrom(this)
+    configurations.named("developmentNeoForge").get().extendsFrom(this)
 }
 
 dependencies {
@@ -30,5 +30,5 @@ dependencies {
     val minecraftVersion: String by project
     val neoforgeVersion: String by project
 
-    neoForge(group = "net.neoforged", name = "neoforge", version = neoforgeVersion)
+    neoForge("net.neoforged:neoforge:$neoforgeVersion")
 }
